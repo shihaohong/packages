@@ -17,6 +17,7 @@ class _SharedAxisTransitionDemoState extends State<SharedAxisTransitionDemo> {
   SharedAxisTransitionType _transitionType =
       SharedAxisTransitionType.horizontal;
   bool _isLoggedIn = false;
+  final GlobalKey pageKey = GlobalKey();
 
   void _updateTransitionType(SharedAxisTransitionType newType) {
     setState(() {
@@ -54,7 +55,7 @@ class _SharedAxisTransitionDemoState extends State<SharedAxisTransitionDemo> {
                     transitionType: _transitionType,
                   );
                 },
-                child: _isLoggedIn ? _CoursePage() : _SignInPage(),
+                child: _isLoggedIn ? _CoursePage(key: pageKey) : _SignInPage(),
               ),
             ),
             Padding(
@@ -115,6 +116,8 @@ class _SharedAxisTransitionDemoState extends State<SharedAxisTransitionDemo> {
 }
 
 class _CoursePage extends StatelessWidget {
+  const _CoursePage({ Key key }) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -169,7 +172,13 @@ class _CourseSwitchState extends State<_CourseSwitch> {
   Widget build(BuildContext context) {
     final String subtitle = _value ? 'Bundled' : 'Shown Individually';
     return SwitchListTile(
-      title: Text(widget.course),
+      title: Row(
+        children: <Widget>[
+          const CircularProgressIndicator(),
+          const Padding(padding: EdgeInsets.symmetric(horizontal: 4.0)),
+          Text(widget.course),
+        ],
+      ),
       subtitle: Text(subtitle),
       value: _value,
       onChanged: (bool newValue) {
