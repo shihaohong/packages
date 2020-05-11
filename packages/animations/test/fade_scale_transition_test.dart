@@ -395,73 +395,6 @@ void main() {
       expect(find.byKey(topKey), findsNothing);
     },
   );
-
-  testWidgets(
-    'state should be preserved from start of transition '
-    'until after the transition is completed, even without '
-    'using a key',
-    (WidgetTester tester) async {
-      Finder getNewRouteSizedBox() {
-        return find.descendant(
-          of: find.byType(_AnimationModal),
-          matching: find.byType(SizedBox),
-        );
-      }
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Builder(builder: (BuildContext context) {
-              return Center(
-                child: RaisedButton(
-                  onPressed: () {
-                    showModal<void>(
-                      context: context,
-                      configuration: const FadeScaleTransitionConfiguration(),
-                      builder: (BuildContext context) {
-                        return const _AnimationModal();
-                      },
-                    );
-                  },
-                  child: const Icon(Icons.add),
-                ),
-              );
-            }),
-          ),
-        ),
-      );
-
-      await tester.tap(find.byType(RaisedButton));
-      await tester.pump();
-
-      expect(getNewRouteSizedBox(), findsOneWidget);
-      expect(tester.widget<SizedBox>(getNewRouteSizedBox()).width, 0);
-      expect(tester.widget<SizedBox>(getNewRouteSizedBox()).height, 0);
-
-      await tester.pump(const Duration(milliseconds: 75));
-      expect(getNewRouteSizedBox(), findsOneWidget);
-      expect(tester.widget<SizedBox>(getNewRouteSizedBox()).width, 0.25);
-      expect(tester.widget<SizedBox>(getNewRouteSizedBox()).height, 0.25);
-
-      // Modal transition animation should end at 150ms.
-      await tester.pump(const Duration(milliseconds: 75));
-      expect(getNewRouteSizedBox(), findsOneWidget);
-      expect(tester.widget<SizedBox>(getNewRouteSizedBox()).width, 0.5);
-      expect(tester.widget<SizedBox>(getNewRouteSizedBox()).height, 0.5);
-
-      // [_AnimationModal] should not reset after the modal transition
-      // is completed.
-      await tester.pump(const Duration(milliseconds: 75));
-      expect(getNewRouteSizedBox(), findsOneWidget);
-      expect(tester.widget<SizedBox>(getNewRouteSizedBox()).width, 0.75);
-      expect(tester.widget<SizedBox>(getNewRouteSizedBox()).height, 0.75);
-
-      await tester.pump(const Duration(milliseconds: 75));
-      expect(getNewRouteSizedBox(), findsOneWidget);
-      expect(tester.widget<SizedBox>(getNewRouteSizedBox()).width, 1.0);
-      expect(tester.widget<SizedBox>(getNewRouteSizedBox()).height, 1.0);
-    }
-  );
 }
 
 double _getOpacity(GlobalKey key, WidgetTester tester) {
@@ -484,45 +417,6 @@ double _getScale(GlobalKey key, WidgetTester tester) {
     final ScaleTransition transition = widget;
     return a * transition.scale.value;
   });
-}
-
-class _AnimationModal extends StatefulWidget {
-  const _AnimationModal({ Key key }) : super(key: key);
-
-  @override
-  _AnimationState createState() => _AnimationState();
-}
-
-class _AnimationState extends State<_AnimationModal> {
-  AnimationController animation;
-
-  @override
-  void initState() {
-    super.initState();
-    animation = AnimationController(
-      vsync: const TestVSync(),
-      // Double the duration of the fade transition
-      duration: const Duration(milliseconds: 300),
-    )..addListener(() {
-      setState(() {});
-    });
-
-    animation.forward();
-  }
-
-  @override
-  void dispose() {
-    animation.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: animation.value,
-      height: animation.value,
-    );
-  }
 }
 
 class _FlutterLogoModal extends StatefulWidget {
