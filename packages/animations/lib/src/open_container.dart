@@ -97,6 +97,7 @@ class OpenContainer<T extends Object> extends StatefulWidget {
     this.transitionDuration = const Duration(milliseconds: 300),
     this.transitionType = ContainerTransitionType.fade,
     this.useRootNavigator = false,
+    this.isRestorable = false,
   })  : assert(closedColor != null),
         assert(openColor != null),
         assert(closedElevation != null),
@@ -257,6 +258,12 @@ class OpenContainer<T extends Object> extends StatefulWidget {
   /// to the nearest navigator.
   final bool useRootNavigator;
 
+  /// Whether to use state restoration.
+  ///
+  /// By default, [isRestorable] is false and the route created will not have
+  /// a restorable route.
+  final bool isRestorable;
+
   @override
   _OpenContainerState<T> createState() => _OpenContainerState<T>();
 }
@@ -274,30 +281,87 @@ class _OpenContainerState<T> extends State<OpenContainer<T>> {
   // same widget included in the [_OpenContainerRoute] where it fades out.
   final GlobalKey _closedBuilderKey = GlobalKey();
 
+  static _OpenContainerRoute<String> _buildOpenContainerRoute(
+    BuildContext context,
+    Object arguments,
+  ) {
+    // ignore: avoid_as
+    final Map<String, dynamic> argumentsMap = arguments as Map<String, dynamic>;
+    return _OpenContainerRoute<String>(
+      closedColor: argumentsMap['closedColor'],
+      openColor: argumentsMap['openColor'],
+      middleColor: argumentsMap['middleColor'],
+      closedElevation: argumentsMap['closedElevation'],
+      openElevation: argumentsMap['openElevation'],
+      closedShape: argumentsMap['closedShape'],
+      openShape: argumentsMap['openShape'],
+      closedBuilder: argumentsMap['closedBuilder'],
+      openBuilder: argumentsMap['openBuilder'],
+      hideableKey: argumentsMap['hideableKey'],
+      closedBuilderKey: argumentsMap['closedBuilderKey'],
+      transitionDuration: argumentsMap['transitionDuration'],
+      transitionType: argumentsMap['transitionType'],
+      useRootNavigator: argumentsMap['useRootNavigator'],
+    );
+  }
+
   Future<void> openContainer() async {
     final Color middleColor =
         widget.middleColor ?? Theme.of(context).canvasColor;
-    final T data = await Navigator.of(
-      context,
-      rootNavigator: widget.useRootNavigator,
-    ).push(_OpenContainerRoute<T>(
-      closedColor: widget.closedColor,
-      openColor: widget.openColor,
-      middleColor: middleColor,
-      closedElevation: widget.closedElevation,
-      openElevation: widget.openElevation,
-      closedShape: widget.closedShape,
-      openShape: widget.openShape,
-      closedBuilder: widget.closedBuilder,
-      openBuilder: widget.openBuilder,
-      hideableKey: _hideableKey,
-      closedBuilderKey: _closedBuilderKey,
-      transitionDuration: widget.transitionDuration,
-      transitionType: widget.transitionType,
-      useRootNavigator: widget.useRootNavigator,
-    ));
-    if (widget.onClosed != null) {
-      widget.onClosed(data);
+
+    if (widget.isRestorable) {
+      final String data = Navigator.of(
+        context,
+        rootNavigator: widget.useRootNavigator,
+      ).restorablePush<String>(
+        _buildOpenContainerRoute,
+        arguments: <String, dynamic>{
+          'closedColor': widget.closedColor,
+          'openColor': widget.openColor,
+          'middleColor': middleColor,
+          'closedElevation': widget.closedElevation,
+          'openElevation': widget.openElevation,
+          'closedShape': widget.closedShape,
+          'openShape': widget.openShape,
+          'closedBuilder': widget.closedBuilder,
+          'openBuilder': widget.openBuilder,
+          'hideableKey': _hideableKey,
+          'closedBuilderKey': _closedBuilderKey,
+          'transitionDuration': widget.transitionDuration,
+          'transitionType': widget.transitionType,
+          'useRootNavigator': widget.useRootNavigator,
+        },
+      );
+
+      if (widget.onClosed != null && widget.onClosed is ClosedCallback<String>) {
+        // ignore: avoid_as
+        final ClosedCallback<String> onClosedCallback = widget.onClosed as ClosedCallback<String>;
+        onClosedCallback(data);
+      }
+    } else {
+      final T data = await Navigator.of(
+        context,
+        rootNavigator: widget.useRootNavigator,
+      ).push(_OpenContainerRoute<T>(
+        closedColor: widget.closedColor,
+        openColor: widget.openColor,
+        middleColor: middleColor,
+        closedElevation: widget.closedElevation,
+        openElevation: widget.openElevation,
+        closedShape: widget.closedShape,
+        openShape: widget.openShape,
+        closedBuilder: widget.closedBuilder,
+        openBuilder: widget.openBuilder,
+        hideableKey: _hideableKey,
+        closedBuilderKey: _closedBuilderKey,
+        transitionDuration: widget.transitionDuration,
+        transitionType: widget.transitionType,
+        useRootNavigator: widget.useRootNavigator,
+      ));
+
+      if (widget.onClosed != null) {
+        widget.onClosed(data);
+      }
     }
   }
 

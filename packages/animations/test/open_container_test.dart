@@ -1694,6 +1694,34 @@ void main() {
     expect(tester.getSize(find.text('Opened')),
         equals(tester.getSize(find.byKey(appKey))));
   });
+
+  testWidgets('State restoration test', (WidgetTester tester) async {
+    await tester.pumpWidget(MaterialApp(
+      restorationScopeId: 'app',
+      home: Scaffold(
+        body: OpenContainer(
+          isRestorable: true,
+          closedBuilder: (BuildContext context, VoidCallback _) {
+            return const Text('Closed');
+          },
+          openBuilder: (BuildContext context, VoidCallback _) {
+            return RouteWidget();
+          },
+        ),
+      ),
+    ));
+
+    // Open the container.
+    expect(find.text('Closed'), findsOneWidget);
+    await tester.tap(find.text('Closed'));
+    await tester.pumpAndSettle();
+    expect(find.text('Closed'), findsNothing);
+    // expect(find.byType(RouteWidget), findsOneWidget);
+
+    // final RouteWidgetState state = (candidate as StatefulElement).state as RouteWidgetState;
+
+  });
+
 }
 
 Color _getScrimColor(WidgetTester tester) {
@@ -1827,5 +1855,40 @@ class __RemoveOpenContainerExampleState
               ],
             ),
           );
+  }
+}
+
+class RouteWidget extends StatefulWidget {
+  @override
+  State<RouteWidget> createState() => RouteWidgetState();
+}
+
+class RouteWidgetState extends State<RouteWidget> with RestorationMixin {
+  final RestorableInt counter = RestorableInt(0);
+
+  @override
+  void restoreState(RestorationBucket oldBucket, bool initialRestore) {
+    registerForRestoration(counter, 'counter');
+  }
+
+  @override
+  String get restorationId => 'stateful';
+
+  @override
+  void dispose() {
+    super.dispose();
+    counter.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      child: const Text('Increment'),
+      onTap: () {
+        setState(() {
+          counter.value++;
+        });
+      },
+    );
   }
 }
